@@ -6,8 +6,14 @@ using namespace std;
 int main() {
 	int points[16] = {1 , 2 , 4 , 8 , 10 , 15 , 20 , 25 , 30 , 35 , 50 , 65 , 80 , 95 , 110 , 114514};
 	int totalPoints;
-	cout << "**This if for Xenon only**\nYour hyper stat points: ";
+	cout << "**This is for Xenon only**\nYour hyper stat points: ";
 	cin >> totalPoints;
+
+	if(totalPoints <= 0) {
+		cout << "\n\nQuit this game ASAP.";
+		system("pause");
+		return 0;
+	}
 
 	double iniSta;
 	double iniCri;
@@ -32,27 +38,35 @@ int main() {
 	cout << "Boss' defense (%): ";
 	cin >> bossDef;
 
-	if(totalPoints <= 0) {
-		cout << "\n\nQuit this game ASAP.";
-		system("pause");
-		return 0;
-	}
 
 	int** res = new int*[totalPoints+1];
 	double* dp = new double[totalPoints+1];
 	//IED
 	int currentLevel = 0;
 	int requirement = 1;
+	bossDef *= 0.01;
+	iniIed = (1 - iniIed * 0.01);
+	double currentRatio = max(1 - iniIed * bossDef , 0.0);
 	for(int i = 0 ; i <= totalPoints ; i++) {
 		if(i == requirement) {
 			currentLevel++;
 			requirement += points[currentLevel];
+			double currentIed = iniIed * (1 - currentLevel * 0.03);
+			currentRatio = max(1 - currentIed * bossDef , 0.0);
 		}
-		double currentIed = 1 - (1 - iniIed * 0.01) * (1 - currentLevel * 0.03);
-		dp[i] = 1 - min(bossDef * 0.01 - currentIed * bossDef * 0.01 , 1.0);
+		dp[i] = currentRatio;
 		res[i] = new int[6];
-		memset(res[i] , 0 , sizeof(res[i]));
+		res[i][0] = 0;
+		res[i][1] = 0;
 		res[i][2] = currentLevel;
+		res[i][3] = 0;
+		res[i][4] = 0;
+		res[i][5] = 0;
+	}
+	if(currentRatio == 0) {
+		cout << "\n\nYou cannot deal any damage whatsoever. :(";
+		system("pause");
+		return 0;
 	}
 	
 	//Dmg&BD
@@ -74,7 +88,7 @@ int main() {
 				dp[j] = dp[j-weight] * value;
 				nop = false;
 				res[j][2] = res[j-weight][2];
-				res[j][4] = res[j-weight][4] + 1;
+				res[j][4] = i + 1;
 				dmg[j] = iniDmg;
 			}
 		}
@@ -89,7 +103,7 @@ int main() {
 				dp[j] = dp[j-weight] * value;
 				nop = false;
 				res[j][2] = res[j-weight][2];
-				res[j][3] = res[j-weight][3] + 1;
+				res[j][3] = i + 1;
 				res[j][4] = res[j-weight][4];
 				dmg[j] = dmg[j-weight] + 3;
 			}
@@ -108,7 +122,7 @@ int main() {
 			if(dp[j-weight] * value > dp[j]) {
 				dp[j] = dp[j-weight] * value;
 				nop = false;
-				res[j][1] = res[j-weight][1] + 1;
+				res[j][1] = i + 1;
 				res[j][2] = res[j-weight][2];
 				res[j][3] = res[j-weight][3];
 				res[j][4] = res[j-weight][4];
@@ -131,7 +145,7 @@ int main() {
 				res[j][2] = res[j-weight][2];
 				res[j][3] = res[j-weight][3];
 				res[j][4] = res[j-weight][4];
-				res[j][5] = res[j-weight][5] + 1;
+				res[j][5] = i + 1;
 			}
 		}
 		if(nop) break;
@@ -147,7 +161,7 @@ int main() {
 			if(dp[j-weight] * value > dp[j]) {
 				dp[j] = dp[j-weight] * value;
 				nop = false;
-				res[j][0] = res[j-weight][0] + 1;
+				res[j][0] = i * 3 + 1;
 				res[j][1] = res[j-weight][1];
 				res[j][2] = res[j-weight][2];
 				res[j][3] = res[j-weight][3];
@@ -163,7 +177,7 @@ int main() {
 			if(dp[j-weight] * value > dp[j]) {
 				dp[j] = dp[j-weight] * value;
 				nop = false;
-				res[j][0] = res[j-weight][0] + 1;
+				res[j][0] = i * 3 + 2;
 				res[j][1] = res[j-weight][1];
 				res[j][2] = res[j-weight][2];
 				res[j][3] = res[j-weight][3];
@@ -179,7 +193,7 @@ int main() {
 			if(dp[j-weight] * value > dp[j]) {
 				dp[j] = dp[j-weight] * value;
 				nop = false;
-				res[j][0] = res[j-weight][0] + 1;
+				res[j][0] = i * 3 + 3;
 				res[j][1] = res[j-weight][1];
 				res[j][2] = res[j-weight][2];
 				res[j][3] = res[j-weight][3];
@@ -198,7 +212,9 @@ int main() {
 		res[totalPoints][3] << " level of total damage\n" <<
 		res[totalPoints][4] << " level of boss damage\n" <<
 		res[totalPoints][5] << " level of attack\n";
-	cout << "with " << dp[totalPoints] * 100 / (1 - min(bossDef * 0.01 - iniIed * bossDef * 0.0001 , 0.99999)) - 100 << "% of gain.\n\n";
+	if(iniIed * bossDef < 1){
+		cout << "with " << dp[totalPoints] * 100 / (1 - iniIed * bossDef) - 100 << "% of gain.\n\n";
+	}
 
 	system("pause");
 	return 0;

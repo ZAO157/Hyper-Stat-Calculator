@@ -9,6 +9,12 @@ int main() {
 	cout << "Your hyper stat points: ";
 	cin >> totalPoints;
 
+	if(totalPoints <= 0) {
+		cout << "\n\nQuit this game ASAP.";
+		system("pause");
+		return 0;
+	}
+
 	double iniSta;
 	double subSta;
 	double iniCri;
@@ -35,24 +41,23 @@ int main() {
 	cout << "Boss' defense (%): ";
 	cin >> bossDef;
 
-	if(totalPoints <= 0) {
-		cout << "\n\nQuit this game ASAP.";
-		system("pause");
-		return 0;
-	}
 
 	int** res = new int*[totalPoints+1];
 	double* dp = new double[totalPoints+1];
 	//IED
 	int currentLevel = 0;
 	int requirement = 1;
+	bossDef *= 0.01;
+	iniIed = (1 - iniIed * 0.01);
+	double currentRatio = max(1 - iniIed * bossDef , 0.0);
 	for(int i = 0 ; i <= totalPoints ; i++) {
 		if(i == requirement) {
 			currentLevel++;
 			requirement += points[currentLevel];
+			double currentIed = iniIed * (1 - currentLevel * 0.03);
+			currentRatio = max(1 - currentIed * bossDef , 0.0);
 		}
-		double currentIed = 1 - (1 - iniIed * 0.01) * (1 - currentLevel * 0.03);
-		dp[i] = 1 - min(bossDef * 0.01 - currentIed * bossDef * 0.01 , 1.0);
+		dp[i] = currentRatio;
 		res[i] = new int[7];
 		res[i][0] = 0;
 		res[i][1] = 0;
@@ -61,6 +66,11 @@ int main() {
 		res[i][4] = 0;
 		res[i][5] = 0;
 		res[i][6] = 0;
+	}
+	if(currentRatio == 0) {
+		cout << "\n\nYou cannot deal any damage whatsoever. :(";
+		system("pause");
+		return 0;
 	}
 
 	//Dmg&BD
@@ -104,7 +114,6 @@ int main() {
 		}
 		if(nop) break;
 	}
-	//delete[] dmg;
 
 	//CD
 	iniCri += 135;
@@ -193,7 +202,6 @@ int main() {
 		}
 		if(nop) break;
 	}
-	//delete[] sta;
 
 	cout << "\n\nYou should use:\n" << 
 		res[totalPoints][0] << " level of main stat\n" <<
@@ -203,7 +211,9 @@ int main() {
 		res[totalPoints][3] << " level of total damage\n" <<
 		res[totalPoints][4] << " level of boss damage\n" <<
 		res[totalPoints][5] << " level of attack/magic\n";
-	cout << "with " << dp[totalPoints] * 100 / (1 - min(bossDef * 0.01 - iniIed * bossDef * 0.0001 , 0.99999)) - 100 << "% of gain.\n\n";
+	if(iniIed * bossDef < 1){
+		cout << "with " << dp[totalPoints] * 100 / (1 - iniIed * bossDef) - 100 << "% of gain.\n\n";
+	}
 
 	system("pause");
 	return 0;
